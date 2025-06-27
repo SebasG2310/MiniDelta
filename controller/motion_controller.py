@@ -18,3 +18,11 @@ class MotionController:
         except Exception as e:
             print(f"[ERROR] Movimiento fallido: {e}")
             self.state.error = True
+    def initialize_position(self):
+        from model.config import delta_config
+        angles = delta_config["initial_angles"]
+        print("[INFO] Inicializando robot...")
+        self.driver.move_servos(angles)
+        self.state.update_angles(angles)
+        # Si sabes la posición XYZ que corresponde a ese ángulo, puedes ponerla aquí también
+        print(f"[INFO] Posición inicial aplicada: {angles}")

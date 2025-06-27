@@ -14,6 +14,7 @@ if __name__ == '__main__':
     state = RobotState()
     driver = ServoDriver()
     controller = MotionController(driver, state)
+    controller.initialize_position()
 
     if USE_ROS:
         import rclpy
