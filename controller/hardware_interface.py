@@ -20,4 +20,4 @@ class ServoDriver:
         for ch, angle in zip(self.channels, angles):
             pwm = self.angle_to_pwm(180-angle)
             self.pca.channels[ch].duty_cycle = pwm
-        time.sleep(0.01)
+        time.sleep(0.5)
