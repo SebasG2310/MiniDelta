@@ -7,8 +7,7 @@ from input.xbox_controller import read_joystick
 import csv
 import threading
 
-USE_ROS = False
-USE_JOYSTICK = True
+USE_JOYSTICK = False
 
 if __name__ == '__main__':
     state = RobotState()
@@ -16,17 +15,7 @@ if __name__ == '__main__':
     controller = MotionController(driver, state)
     controller.initialize_position()
 
-    if USE_ROS:
-        import rclpy
-        from ros2_interface.delta_node import DeltaNode
-
-        rclpy.init()
-        node = DeltaNode(controller)
-        rclpy.spin(node)
-        node.destroy_node()
-        rclpy.shutdown()
-
-    elif USE_JOYSTICK:
+    if USE_JOYSTICK:
         print("Modo joystick activado. CTRL+C para salir.")
         for x, y, z in read_joystick():
             scaled_x = x * 100

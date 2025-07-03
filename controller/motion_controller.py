@@ -1,4 +1,4 @@
-from model.kinematics import inverse_kinematics
+from model.kinematics import inverse_kinematics, forward_kinematics
 
 class MotionController:
     def __init__(self, driver, state):
@@ -17,6 +17,19 @@ class MotionController:
                 self.state.error = True
         except Exception as e:
             print(f"[ERROR] Movimiento fallido: {e}")
+            self.state.error = True
+    def move_by_angles(self, theta1, theta2, theta3):
+        try:
+            status, position = forward_kinematics(theta1, theta2, theta3)
+            if status == 0:
+                self.driver.move_servos([theta1, theta2, theta3])
+                self.state.update_angles([theta1, theta2, theta3])
+                self.state.update_position(*position)
+            else:
+                print("[ERROR] Los ángulos no resultan en una posición válida")
+                self.state.error = True
+        except Exception as e:
+            print(f"[ERROR] Movimiento por ángulos fallido: {e}")
             self.state.error = True
     def initialize_position(self):
         from model.config import delta_config

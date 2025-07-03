@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Control Delta Robot</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    h1, h2 { margin-top: 1.5rem; }
+    form { margin-bottom: 2rem; }
+    label { display: block; margin-top: 0.5rem; }
+    input[type="number"], input[type="range"] { width: 250px; }
+    select { margin-top: 1rem; }
+    #plot { width: 600px; height: 400px; }
+  </style>
+</head>
+<body>
+  <h1>Interfaz Delta Robot</h1>
+
+  <label for="mode">Selecciona modo de control:</label>
+  <select id="mode" onchange="switchMode()">
+    <option value="angles">Cinemática directa (por ángulos)</option>
+    <option value="coords">Cinemática inversa (por coordenadas)</option>
+    <option value="trajectory">Ejecutar trayectoria</option>
+    <option value="remote">Control remoto (gamepad)</option>
+  </select>
+
+  <!-- Formulario DK -->
+  <form method="POST" id="anglesForm">
+    <input type="hidden" name="mode" value="angles">
+    <label>θ1: <input type="number" name="theta1" step="1"></label>
+    <label>θ2: <input type="number" name="theta2" step="1"></label>
+    <label>θ3: <input type="number" name="theta3" step="1"></label>
+    <button type="submit">Calcular posición</button>
+  </form>
+
+  <!-- Formulario IK -->
+  <form method="POST" id="coordsForm" style="display:none;">
+    <input type="hidden" name="mode" value="coords">
+    <label>X: <input type="number" name="x" step="1"></label>
+    <label>Y: <input type="number" name="y" step="1"></label>
+    <label>Z: <input type="number" name="z" step="1"></label>
+    <button type="submit">Calcular ángulos</button>
+  </form>
+
+  <!-- Ejecutar trayectoria -->
+  <form method="POST" id="trajectoryForm" style="display:none;">
+    <input type="hidden" name="mode" value="trajectory">
+    <label>Nombre de archivo CSV: <input type="text" name="csv_file"></label>
+    <button type="submit">Ejecutar trayectoria</button>
+  </form>
+
+  <!-- Control remoto -->
+  <form method="POST" id="remoteForm" style="display:none;">
+    <input type="hidden" name="mode" value="remote">
+    <p>Haz clic para iniciar el control remoto con joystick conectado.</p>
+    <button type="submit">Iniciar control remoto</button>
+  </form>
+
+  {% if result %}
+    <h2>Resultado:</h2>
+    <pre>{{ result }}</pre>
+    {% if result.x is defined and result.y is defined and result.z is defined %}
+    <div id="plot"></div>
+    <script>
+      const data = [{
+        x: [{{ result.x }}],
+        y: [{{ result.y }}],
+        z: [{{ result.z }}],
+        mode: 'markers',
+        type: 'scatter3d',
+        marker: { size: 6, color: 'red' }
+      }];
+      Plotly.newPlot('plot', data);
+    </script>
+    {% endif %}
+  {% endif %}
+
+  <script>
+    function switchMode() {
+      const mode = document.getElementById("mode").value;
+      document.getElementById("anglesForm").style.display = mode === "angles" ? "block" : "none";
+      document.getElementById("coordsForm").style.display = mode === "coords" ? "block" : "none";
+      document.getElementById("trajectoryForm").style.display = mode === "trajectory" ? "block" : "none";
+      document.getElementById("remoteForm").style.display = mode === "remote" ? "block" : "none";
+    }
+  </script>
+</body>
+</html>

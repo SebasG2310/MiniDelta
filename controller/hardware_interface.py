@@ -12,12 +12,12 @@ class ServoDriver:
         self.channels = delta_config["servo_channels"]
 
     def angle_to_pwm(self, angle):
-        pulse_length = 1000000 / self.pca.frequency / 4096
-        pulse = (angle * (500/90)) + 1500
-        return int(pulse / pulse_length)
+        pulse_us = 500 + (angle / 180.0) * (2500 - 500)  # De 500 a 2500 µs
+        duty = int((pulse_us / 20000.0) * 65535)         # 20ms ciclo (50Hz)
+        return duty
 
     def move_servos(self, angles):
         for ch, angle in zip(self.channels, angles):
-            pwm = self.angle_to_pwm(angle)
-            self.pca.channels[ch].duty_cycle = pwm << 4
-        time.sleep(0.05)
+            pwm = self.angle_to_pwm(180-angle)
+            self.pca.channels[ch].duty_cycle = pwm
+        time.sleep(0.01)
