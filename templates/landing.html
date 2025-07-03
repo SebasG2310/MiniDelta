@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MiniDelta Robot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: sans-serif;
+            background-color: #f5f5f5;
+        }
+        .landing-box {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .landing-box h1 {
+            margin-bottom: 10px;
+        }
+        .landing-box p {
+            margin-bottom: 20px;
+        }
+        .landing-box a {
+            padding: 10px 20px;
+            background-color: #0066cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+        .landing-box a:hover {
+            background-color: #004a99;
+        }
+    </style>
+</head>
+<body>
+<div class="landing-box">
+    <h1>MiniDelta Robot</h1>
+    <p>Controla tu robot delta desde una interfaz web intuitiva.</p>
+    <a href="{{ url_for('index') }}">Iniciar Control</a>
+</div>
+</body>
+</html>

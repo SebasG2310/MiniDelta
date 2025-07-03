@@ -1,81 +1,118 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Control Delta Robot</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Control Robot Delta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        function showSection(id) {
+            document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        window.onload = function () {
+            {% if active_section %}
+            showSection("{{ active_section }}");
+            {% endif %}
+            {% if result %}
+            const toast = document.getElementById('toast');
+            toast.classList.add('{{ "success" if result.msg else "error" }}');
+            toast.innerText = "{{ result.msg if result.msg else result.error }}";
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+            {% endif %}
+        }
+    </script>
 </head>
 <body>
-  <h1>Interfaz Delta Robot</h1>
+<div class="container">
+    <aside class="sidebar">
+        <h2>Controles</h2>
+        <ul>
+            <li><button onclick="showSection('ik')">Cinemática Inversa</button></li>
+            <li><button onclick="showSection('dk')">Cinemática Directa</button></li>
+            <li><button onclick="showSection('arrows')">Mover con Flechas</button></li>
+            <li><button onclick="showSection('trajectory')">Ejecutar Trayectoria</button></li>
+            <li><button onclick="showSection('remote')">Control Remoto</button></li>
+            <li><button onclick="showSection('config')">Configuración</button></li>
+        </ul>
+    </aside>
 
-  <label for="mode">Selecciona modo de control:</label>
-  <select id="mode" onchange="switchMode()">
-    <option value="angles">Cinemática directa (por ángulos)</option>
-    <option value="coords">Cinemática inversa (por coordenadas)</option>
-    <option value="trajectory">Ejecutar trayectoria</option>
-    <option value="remote">Control remoto (gamepad)</option>
-  </select>
+    <main class="content">
+        <div id="toast" class="toast hidden"></div>
 
-  <!-- Formulario DK -->
-  <form method="POST" id="anglesForm">
-    <input type="hidden" name="mode" value="angles">
-    <label>θ1: <input type="number" name="theta1" step="1"></label>
-    <label>θ2: <input type="number" name="theta2" step="1"></label>
-    <label>θ3: <input type="number" name="theta3" step="1"></label>
-    <button type="submit">Calcular posición</button>
-  </form>
+        <section id="ik" class="{% if active_section != 'coords' %}hidden{% endif %}">
+            <h3>Movimiento por Coordenadas</h3>
+            <form method="POST">
+                <input type="hidden" name="mode" value="coords">
+                X: <input type="number" name="x" step="1"><br>
+                Y: <input type="number" name="y" step="1"><br>
+                Z: <input type="number" name="z" step="1"><br>
+                <button type="submit">Mover</button>
+            </form>
+        </section>
 
-  <!-- Formulario IK -->
-  <form method="POST" id="coordsForm" style="display:none;">
-    <input type="hidden" name="mode" value="coords">
-    <label>X: <input type="number" name="x" step="1"></label>
-    <label>Y: <input type="number" name="y" step="1"></label>
-    <label>Z: <input type="number" name="z" step="1"></label>
-    <button type="submit">Calcular ángulos</button>
-  </form>
+        <section id="dk" class="{% if active_section != 'angles' %}hidden{% endif %}">
+            <h3>Movimiento por Ángulos</h3>
+            <form method="POST">
+                <input type="hidden" name="mode" value="angles">
+                Theta1: <input type="range" name="theta1" min="0" max="90"><br>
+                Theta2: <input type="range" name="theta2" min="0" max="90"><br>
+                Theta3: <input type="range" name="theta3" min="0" max="90"><br>
+                <button type="submit">Mover</button>
+            </form>
+        </section>
 
-  <!-- Ejecutar trayectoria -->
-  <form method="POST" id="trajectoryForm" style="display:none;">
-    <input type="hidden" name="mode" value="trajectory">
-    <label>Nombre de archivo CSV: <input type="text" name="csv_file"></label>
-    <button type="submit">Ejecutar trayectoria</button>
-  </form>
+        <section id="arrows" class="hidden">
+            <h3>Control con Flechas</h3>
+            <form method="POST" class="dpad-container">
+                <input type="hidden" name="mode" value="arrows">
+          
+                <div class="dpad">
+                  <button class="btn-dpad up" name="dir" value="forward">↑</button>
+                  <button class="btn-dpad left" name="dir" value="left">←</button>
+                  <button class="btn-dpad home" name="dir" value="home">🏠 </button>
+                  <button class="btn-dpad right" name="dir" value="right">→</button>
+                  <button class="btn-dpad down" name="dir" value="backward">↓</button>
+                </div>
 
-  <!-- Control remoto -->
-  <form method="POST" id="remoteForm" style="display:none;">
-    <input type="hidden" name="mode" value="remote">
-    <p>Haz clic para iniciar el control remoto con joystick conectado.</p>
-    <button type="submit">Iniciar control remoto</button>
-  </form>
+                <div class="z-controls">
+                    <button class="btn-z" name="dir" value="up">Z+</button>
+                    <button class="btn-z" name="dir" value="down">Z-</button>
+                </div>
+              </form>
+        </section>
 
-  {% if result %}
-    <h2>Resultado:</h2>
-    <pre>{{ result }}</pre>
-    {% if result.x is defined and result.y is defined and result.z is defined %}
-    <div id="plot"></div>
-    <script>
-      const data = [{
-        x: [{{ result.x }}],
-        y: [{{ result.y }}],
-        z: [{{ result.z }}],
-        mode: 'markers',
-        type: 'scatter3d',
-        marker: { size: 6, color: 'red' }
-      }];
-      Plotly.newPlot('plot', data);
-    </script>
-    {% endif %}
-  {% endif %}
 
-  <script>
-    function switchMode() {
-      const mode = document.getElementById("mode").value;
-      document.getElementById("anglesForm").style.display = mode === "angles" ? "block" : "none";
-      document.getElementById("coordsForm").style.display = mode === "coords" ? "block" : "none";
-      document.getElementById("trajectoryForm").style.display = mode === "trajectory" ? "block" : "none";
-      document.getElementById("remoteForm").style.display = mode === "remote" ? "block" : "none";
-    }
-  </script>
+        <section id="trajectory" class="{% if active_section != 'trajectory' %}hidden{% endif %}">
+            <h3>Ejecutar Trayectoria desde CSV</h3>
+            <form method="POST">
+                <input type="hidden" name="mode" value="trajectory">
+                Archivo CSV: <input type="text" name="csv_file"><br>
+                <button type="submit">Ejecutar</button>
+            </form>
+        </section>
+
+        <section id="remote" class="{% if active_section != 'remote' %}hidden{% endif %}">
+            <h3>Control con Joystick</h3>
+            <form method="POST">
+                <input type="hidden" name="mode" value="remote">
+                <button type="submit">Iniciar</button>
+            </form>
+        </section>
+
+        <section id="config" class="{% if active_section != 'config' %}hidden{% endif %}">
+            <h3>Configuración Física del Robot</h3>
+            <ul>
+                <li>e = {{ config.e }}</li>
+                <li>f = {{ config.f }}</li>
+                <li>rf = {{ config.rf }}</li>
+                <li>re = {{ config.re }}</li>
+            </ul>
+        </section>
+    </main>
+</div>
 </body>
 </html>
